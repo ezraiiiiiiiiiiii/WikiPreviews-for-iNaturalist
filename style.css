@@ -1,0 +1,149 @@
+/* style.css */
+/* CSS extracted from iNaturalist Wikipedia Previews userscript */
+
+.inat-wiki-link {
+    margin-left: 8px;
+    font-size: 12px;
+    color: #0066cc !important;
+    text-decoration: none;
+    cursor: help;
+    border-bottom: 1px dotted #0066cc;
+}
+
+.wp-popup {
+    box-sizing: border-box;
+    padding: 0;
+    box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.3), 0 0 1px 1px rgba(0, 0, 0, 0.05);
+    z-index: 110000;
+    position: absolute;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+    pointer-events: auto;
+    max-width: 90vw;
+    width: 550px;
+    background: white;
+    border-radius: 8px;
+    color: #202122;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+.wp-popup.show {
+    opacity: 1;
+}
+
+.wp-popup-arrow {
+    width: 17px;
+    height: 17px;
+    position: absolute;
+    clip-path: polygon(50% 0%, 50% 0%, 100% 50%, 0% 50%);
+    background-color: white;
+    left: -8px;
+    top: 42px;
+    display: none;
+}
+
+.wikipediapreview {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    border-radius: 8px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.wikipediapreview * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.wikipediapreview *::-webkit-scrollbar {
+    display: none;
+}
+
+.wikipediapreview-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.wikipediapreview-body {
+    flex: 1;
+    overflow: visible;
+    margin-bottom: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+}
+
+.wikipediapreview-body-text-content {
+    width: 100%;
+}
+
+.wikipediapreview-body-image {
+    min-width: 200px;
+    width: 200px;
+    background-color: #eaecf0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.wikipediapreview-body-image.no-image {
+    display: none;
+}
+
+.wikipediapreview-body p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 14px;
+    padding: 0;
+    color: inherit;
+    word-break: break-word;
+}
+
+.wikipediapreview-body p + p {
+    margin-top: 12px;
+}
+
+.wikipediapreview-body a {
+    color: #36c;
+    text-decoration: none;
+}
+
+.wikipediapreview-body a:hover {
+    text-decoration: underline;
+}
+
+.wikipediapreview-body-loading-text {
+    font-style: italic;
+    font-size: 14px;
+    color: #777;
+}
+
+.wikipediapreview-footer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    font-size: 13px;
+}
+
+.wikipediapreview-footer-link-cta {
+    text-decoration: none;
+    color: #36c;
+}
+
+.wikipediapreview-footer-link-cta:hover {
+    text-decoration: underline;
+}
