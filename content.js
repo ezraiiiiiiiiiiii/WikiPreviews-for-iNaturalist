@@ -1,6 +1,7 @@
 (function() {
     'use strict';
 
+    // 1. Element creation/initialization
     const wrapper = document.createElement('div');
     wrapper.className = 'wp-popup';
     wrapper.id = 'wiki-preview-popup';
@@ -22,11 +23,7 @@
         <div class="wikipediapreview-body-image no-image" id="wiki-body-image"></div>
     `;
 
-    const arrow = document.createElement('div');
-    arrow.className = 'wp-popup-arrow';
-
     wrapper.appendChild(popup);
-    wrapper.appendChild(arrow);
     document.body.appendChild(wrapper);
 
     const popupBody = popup.querySelector('#wiki-preview-body');
@@ -40,7 +37,7 @@
     let isOverPopup = false;
     let currentScientificName = null;
     let isPopupLoaded = false;
-    let currentRequest = null; 
+    let currentRequest = null; // Uses AbortController, initialized in fetchWikiData
 
     function attemptHide() {
         if (isOverLink || isOverPopup) return;
@@ -118,6 +115,7 @@
         setTimeout(attemptHide, 100);
     });
 
+    // 2. Network functions using fetch
     function fetchWikiData(title) {
         if (currentRequest && currentRequest.abort) currentRequest.abort();
         currentRequest = new AbortController();
@@ -193,6 +191,7 @@
             });
     }
 
+    // 3. Rendering function (with relative link fix)
     function renderPopup(parseData, summaryData) {
         const pageTitle = parseData.title;
         const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`;
@@ -212,7 +211,14 @@
         }
 
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = parseData.text;
+        let wikiHtml = parseData.text; 
+
+        wikiHtml = wikiHtml.replace(
+            /(href=["'])(\/(?:wiki|\w)\/)/g,
+            '$1https://en.wikipedia.org$2'
+        );
+        
+        tempDiv.innerHTML = wikiHtml;
 
         const removeSelectors = '.mw-editsection, .reference, sup, .noprint, .infobox, .navbox, .vertical-navbox, .sidebar, .metadata, table';
         tempDiv.querySelectorAll(removeSelectors).forEach(el => el.remove());
@@ -292,7 +298,8 @@
         isPopupLoaded = true;
     }
 
-function createLink(scientificName) {
+    // 4. Link creation
+function createLink(scientificName, inline = false) {
     const link = document.createElement('a');
     
     link.title = ""; 
@@ -300,8 +307,13 @@ function createLink(scientificName) {
     link.href = `https://en.wikipedia.org/wiki/${encodeURIComponent(scientificName)}`;
     link.target = '_blank';
     link.className = 'inat-wiki-link';
-    link.innerHTML = '📖 Wiki';
-
+    link.style.cssText = 'text-decoration: none !important; border-bottom: none !important;';
+    
+    const size = inline ? '1.4em' : '2.0em';
+    const margin = inline ? '0em' : '0.3em';
+    
+    // Wikipedia icon
+link.innerHTML = `<span style="display: inline-block; width: ${size}; height: ${size}; background: white; border: 1.5px solid #3366cc; border-radius: 20%; padding: 0.1em; **vertical-align: middle;** margin-left: ${margin}; line-height: 0; box-sizing: border-box;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wikipedia%27s_W.svg" style="width: 100%; height: 100%; display: block;"></span>`;
     link.addEventListener('mouseenter', (e) => {
         isOverLink = true;
         showPopup(link.getBoundingClientRect(), scientificName);
@@ -315,40 +327,70 @@ function createLink(scientificName) {
     return link;
 }
 
+function makeAnchorInline(anchor) {
+    anchor.style.display = 'inline';
+    anchor.style.whiteSpace = 'nowrap';
+}
 
     function addWikipediaLinks() {
-        const taxonContainers = document.querySelectorAll('inat-taxon:not([data-wiki-added]), .SplitTaxon:not([data-wiki-added])');
+    const taxonContainers = document.querySelectorAll(
+        'inat-taxon, .SplitTaxon'
+    );
 
-        taxonContainers.forEach(container => {
-            let scientificNameText = '';
+    taxonContainers.forEach(container => {
+        // Skip if we already processed the link inside this container
+        if (container.querySelector('.inat-wiki-link[data-processed="true"]')) return;
 
-            let scientificNameElement = container.querySelector('.sciname') ||
-                                            container.querySelector('.display-name.sciname') ||
-                                            container.querySelector('.secondary-name .sciname');
+        let scientificNameText = '';
 
-            if (scientificNameElement) {
-                scientificNameText = scientificNameElement.textContent.trim();
+        const sciEl =
+            container.querySelector('.sciname') ||
+            container.querySelector('.display-name.sciname') ||
+            container.querySelector('.secondary-name .sciname');
+
+        if (sciEl) scientificNameText = sciEl.textContent.trim();
+        if (!scientificNameText || scientificNameText === 'Unknown') return;
+
+        const rankRegex = /^(Realm|Subrealm|Kingdom|Subkingdom|Phylum|Subphylum|Division|Subdivision|Class|Subclass|Superclass|Superorder|Order|Suborder|Infraorder|Superfamily|Epifamily|Family|Subfamily|Infrafamily|Tribe|Subtribe|Infratribe|Genus|Subgenus|Species|Subspecies)\s+/;
+        const cleanName = scientificNameText.replace(rankRegex, '');
+        if (!/^[A-Z][A-Za-z\s-]+$/.test(cleanName)) return;
+
+        const inActivity = container.closest('.ActivityItem') !== null;
+        const inGrid = container.classList.contains('title') &&
+                       container.closest('.thumbnail') !== null;
+
+        // inside createLink
+        const link = createLink(cleanName, inActivity || inGrid);
+        link.dataset.processed = "true";
+
+        // Attach to existing container logic
+        if (inActivity) {
+            const primarySciName = container.querySelector('.sciname.display-name');
+            if (primarySciName) {
+                primarySciName.after(link);
+            } else {
+                const comname = container.querySelector('.comname');
+                if (comname) comname.after(link);
+                else container.appendChild(link);
             }
-
-            if (!scientificNameText || scientificNameText === 'Unknown') return;
-
-            const rankRegex = /^(Realm|Subrealm|Kingdom|Subkingdom|Phylum|Subphylum|Division|Subdivision|Class|Subclass|Superclass|Superorder|Order|Suborder|Infraorder|Superfamily|Epifamily|Family|Subfamily|Infrafamily|Tribe|Subtribe|Infratribe|Genus|Subgenus|Species|Subspecies)\s+/;
-            const cleanName = scientificNameText.replace(rankRegex, '');
-
-            if (cleanName.length > 0 && /^[A-Z][A-Za-z\s-]+$/.test(cleanName) && cleanName !== 'Unknown') {
-                const link = createLink(cleanName);
-
-                if (container.classList.contains('SplitTaxon')) {
-                    const target = container.querySelector('.names') || container;
-                    target.appendChild(link);
-                } else {
-                    container.appendChild(link);
-                }
-
-                container.setAttribute('data-wiki-added', 'true');
+        } else if (inGrid) {
+            const comname = container.querySelector('.display-name.comname');
+            const sciname = container.querySelector('.display-name.sciname');
+            if (comname) { makeAnchorInline(comname); comname.after(link); }
+            else if (sciname) { makeAnchorInline(sciname); sciname.after(link); }
+            else container.appendChild(link);
+        } else if (container.classList.contains('SplitTaxon')) {
+            const sciEl = container.querySelector('.sciname.display-name');
+            if (sciEl) {
+                sciEl.after(link);
+            } else {
+                container.appendChild(link);
             }
-        });
-    }
+        } else {
+            container.appendChild(link);
+        }
+    });
+}
 
     function init() {
         addWikipediaLinks();
@@ -366,7 +408,6 @@ function createLink(scientificName) {
         });
 
         observer.observe(document.body, { childList: true, subtree: true });
-        setInterval(addWikipediaLinks, 3000);
     }
 
     if (document.readyState === 'loading') {
